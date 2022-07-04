@@ -118,12 +118,12 @@ logging.info("Scraping from or greater than: " + threshold)
 
 try:
 
-    url = 'https://www.eprocurement.gov.cy/epps/quickSearchAction.do?latest=true&searchSelect=1&selectedItem=quickSearchAction.do%3Flatest%3Dtrue%26searchSelect%3D1'  
+    url = 'https://torgi.erg.kz/CommonInfoPages/%D0%90%D0%BD%D0%BE%D0%BD%D1%81%D1%8B%20%D0%BF%D0%BB%D0%B0%D0%BD%D0%B8%D1%80%D1%83%D0%B5%D0%BC%D1%8B%D1%85%20%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%20%D0%B8%20%D1%83%D1%81%D0%BB%D1%83%D0%B3.aspx?Paged=TRUE&p_Created=20211220%2006%3a05%3a05&p_ID=420&PageFirstRow=61&&View={80D9A494-6A61-4C59-A005-4E3125605640}'  
     logging.info(url)
     logging.info('----------------------------------')
     fn.load_page(page_main, url)
     
-    submit = WebDriverWait(page_main, 30).until(EC.presence_of_element_located((By.XPATH,'//*[@id="cookieModalConsent"]')))
+    submit = WebDriverWait(page_main, 30).until(EC.presence_of_element_located((By.XPATH,'/html/body/div[2]/div/div[2]/div/div[2]/input[2]')))
     page_main.execute_script("arguments[0].click();",submit)
 
     for page in range(26):
