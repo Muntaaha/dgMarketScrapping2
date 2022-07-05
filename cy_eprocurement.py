@@ -2,20 +2,19 @@ import logging
 import re
 import time
 from datetime import date, datetime, timedelta
-# from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 import common.OutputXML
 import functions as fn
 from common.NoticeData import NoticeData
 
 MAX_NOTICES = 20000
-
 notice_count = 0
 output_xml_file = common.OutputXML.OutputXML("cy_eprocurement")
+
 
 def extract_and_save_notice(tender_html_element):
     global notice_count
@@ -23,7 +22,6 @@ def extract_and_save_notice(tender_html_element):
     notice_data = NoticeData()
     wait_detail = WebDriverWait(page_details, 20)
     
-    notice_data.cpvs.clear()
     notice_data.performance_country = 'Cyprus'
     notice_data.contact_country = 'Cyprus'
     notice_data.procurement_method = "Other"
@@ -35,7 +33,7 @@ def extract_and_save_notice(tender_html_element):
     
     try:
         title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(2) a").text
-        # notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
+        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
     except:
         pass
     
@@ -48,7 +46,6 @@ def extract_and_save_notice(tender_html_element):
         published_date = page_details.find_element(By.CSS_SELECTOR, "td:nth-of-type(4)").text
         published_date = re.findall('\d+/\d+/\d{4}',published_date)[0]
         notice_data.published_date =  datetime.strptime(published_date, '%d/%m/%Y').strftime('%Y/%m/%d')
-        logging.info(notice_data.published_date)
     except:
         pass
 
@@ -87,28 +84,18 @@ def extract_and_save_notice(tender_html_element):
     except:
         notice_data.notice_url = url
     
-    # if notice_data.cpvs == [] and notice_data.title_en is not None:
-    #     notice_data.cpvs = fn.assign_cpvs_from_title(notice_data.title_en.lower(),notice_data.category)
+    if notice_data.cpvs == [] and notice_data.title_en is not None:
+        notice_data.cpvs = fn.assign_cpvs_from_title(notice_data.title_en.lower(),notice_data.category)
         
-    # notice_data.cleanup()
+    notice_data.cleanup()
     logging.info('-------------------------------')
     output_xml_file.writeNoticeToXMLFile(notice_data)
     notice_count += 1
     
 # ----------------------------------------- Main Body
 
-# page_main = fn.init_chrome_driver()
-# page_details = fn.init_chrome_driver()
-profile = webdriver.FirefoxProfile()
-
-try:
-    driver = webdriver.Firefox(executable_path='/home/dgmarket/Documents/scraps/geckodriver-v0.24.0-linux64/geckodriver', firefox_profile=profile)
-    page = webdriver.Firefox(executable_path='/home/dgmarket/Documents/scraps/geckodriver-v0.24.0-linux64/geckodriver', firefox_profile=profile)
-except: 
-    time.sleep(15)
-    driver = webdriver.Firefox(executable_path='/home/dgmarket/Documents/scraps/geckodriver-v0.24.0-linux64/geckodriver', firefox_profile=profile)
-    page = webdriver.Firefox(executable_path='/home/dgmarket/Documents/scraps/geckodriver-v0.24.0-linux64/geckodriver', firefox_profile=profile)
-
+page_main = fn.init_chrome_driver()
+page_details = fn.init_chrome_driver()
 
 wait = WebDriverWait(page_main, 20)
 
@@ -153,6 +140,6 @@ except Exception as e:
         pass
     raise e
 finally:
-    # page_main.quit()
+    page_main.quit()
     page_details.quit()
-    # output_xml_file.copyFinalXMLToServer("europe")
+    output_xml_file.copyFinalXMLToServer("europe")

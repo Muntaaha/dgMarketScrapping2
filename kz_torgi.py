@@ -24,21 +24,13 @@ def extract_and_save_notice(tender_html_element):
     notice_data = NoticeData()
     wait_detail = WebDriverWait(page_details, 20)
     
-    notice_data.cpvs.clear()
+
     notice_data.performance_country = 'Kazakhstan'
     notice_data.contact_country = 'Kazakhstan'
     notice_data.procurement_method = "Other"
     notice_data.language = "RU"
     
-    notice_data.notice_type = "spn"  
-
-    notice_data.buyer_internal_id = 'N/A'
-    
-    try:
-        title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(2)").text
-        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
-    except:
-        pass
+    notice_data.notice_type = "spn"
             
     try:
         published_date = page_main.find_element(By.CSS_SELECTOR, "td:nth-of-type(1) nobr").text
@@ -51,6 +43,12 @@ def extract_and_save_notice(tender_html_element):
     if notice_data.published_date is not None and  notice_data.published_date < threshold:
         return
 
+
+    try:
+        title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(2)").text
+        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
+    except:
+        pass
 
     try:
         notice_data.notice_url = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(3) a").get_attribute('href')
@@ -97,9 +95,6 @@ def extract_and_save_notice(tender_html_element):
             notice_data.notice_text += wait_detail.until(EC.presence_of_element_located((By.XPATH,'/html/body/form/div[8]/div/div[3]/div/div[2]/div/div/div/div[4]/div/div/table/tbody/tr/td/div/div/table/tbody'))).text
         except:
             pass
-    
-        notice_data.referance = 'N/A'
-
 
     except:
         notice_data.notice_url = url
@@ -134,7 +129,7 @@ try:
     page_main.execute_script("arguments[0].click();",submit)
 
     for page in range(15):
-             
+        page_check = WebDriverWait(page_main, 120).until(EC.presence_of_element_located((By.XPATH,'/html/body/form/div[8]/div/div[3]/div/div[2]/div/div/div/div[4]/div/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td/table/tbody/tr/td/div/table[1]/tbody/tr/td/table/tbody/tr[2]/td[1]/nobr'))).text
         for tender_html_element in wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/form/div[8]/div/div[3]/div/div[2]/div/div/div/div[4]/div/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td/table/tbody/tr/td/div/table[1]/tbody/tr/td/table/tbody'))).find_elements(By.CSS_SELECTOR, 'tr')[1:]:
             extract_and_save_notice(tender_html_element)
             if notice_count >= MAX_NOTICES:
@@ -143,13 +138,16 @@ try:
             if notice_data.published_date is not None and  notice_data.published_date < threshold:
                 break
 
-
         try:
-            more_notices = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/form/div[8]/div/div[3]/div/div[2]/div/div/div/div[4]/div/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td/table/tbody/tr/td/div/table[2]/tbody/tr[3]/td/table/tbody/tr/td[3]/a'))).click()
-            logging.info('click')
+            next_page = WebDriverWait(page_main, 50).until(EC.element_to_be_clickable((By.XPATH, '/html/body/form/div[8]/div/div[3]/div/div[2]/div/div/div/div[4]/div/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td/table/tbody/tr/td/div/table[2]/tbody/tr[3]/td/table/tbody/tr/td[3]/a')))
+            page_main.execute_script("arguments[0].click();",next_page)
+            WebDriverWait(page_main, 50).until_not(EC.text_to_be_present_in_element((By.XPATH,'/html/body/form/div[8]/div/div[3]/div/div[2]/div/div/div/div[4]/div/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td/table/tbody/tr/td/div/table[1]/tbody/tr/td/table/tbody/tr[2]/td[1]/nobr'),page_check))
+            logging.info("Next Page")
         except:
+            logging.info("No Next Page")
             break
-    
+
+
     logging.info("Finished processing. Scraped {} notices".format(notice_count))
     fn.session_log('kz_torgi', notice_count, 'XML uploaded')
 except Exception as e:
@@ -162,4 +160,4 @@ except Exception as e:
 finally:
     page_main.quit()
     page_details.quit()
-    output_xml_file.copyFinalXMLToServer("europe")
+    output_xml_file.copyFinalXMLToServer("cis")

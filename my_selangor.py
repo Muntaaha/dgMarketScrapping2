@@ -6,7 +6,6 @@ from datetime import date, datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 import common.OutputXML
 import functions as fn
@@ -23,27 +22,12 @@ def extract_and_save_notice(tender_html_element):
     notice_data = NoticeData()
     wait_detail = WebDriverWait(page_details, 20)
     
-    notice_data.cpvs.clear()
+
     notice_data.performance_country = 'Malaysia'
     notice_data.contact_country = 'Malaysia'
     notice_data.procurement_method = "Other"
     notice_data.language = "MS"
     notice_data.notice_type = 'spn'
-    notice_data.buyer_internal_id = 'N/A'
-
-
-    notice_data.buyer = 'ORLEN SA'
-    
-    try:
-        title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) a").text
-        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
-    except:
-        pass
-    
-    try:
-        notice_data.referance = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) small strong u").text
-    except:
-        pass
 
     try:
         published_date = page_details.find_element(By.XPATH, "td:nth-of-type(3)").text
@@ -55,6 +39,17 @@ def extract_and_save_notice(tender_html_element):
 
     if notice_data.published_date is not None and  notice_data.published_date < threshold:
         return
+    
+    try:
+        title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) a").text
+        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
+    except:
+        pass
+    
+    try:
+        notice_data.referance = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) small strong u").text
+    except:
+        pass
 
     try:
         end_date = page_details.find_element(By.XPATH, "td:nth-of-type(4)").text
@@ -106,7 +101,7 @@ try:
     fn.load_page(page_main, url)
     
     for page in range(25):
-
+        page_check = WebDriverWait(page_main, 120).until(EC.presence_of_element_located((By.XPATH,'//*[@id="DataTables_Table_0"]/tbody/tr[1]/td[1]/strong/u'))).text
         for tender_html_element in wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div/div/div[3]/table/tbody'))).find_elements(By.CSS_SELECTOR, 'tr'):
             extract_and_save_notice(tender_html_element)
             if notice_count >= MAX_NOTICES:
@@ -116,16 +111,13 @@ try:
                 break
 
         try:
-            try:
-                more_notices = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div/div[3]/div[2]/div/div[2]/div/ul/li[7]/a'))).click()
-                logging.info('click')
-            except:
-                page_main.refresh()
-                more_notices = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div/div[3]/div[2]/div/div[2]/div/ul/li[7]/a'))).click()
-                logging.info('click')
+            next_page = WebDriverWait(page_main, 50).until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div/div[3]/div[2]/div/div[2]/div/ul/li[7]/a')))
+            page_main.execute_script("arguments[0].click();",next_page)
+            WebDriverWait(page_main, 50).until_not(EC.text_to_be_present_in_element((By.XPATH,'//*[@id="DataTables_Table_0"]/tbody/tr[1]/td[1]/strong/u'),page_check))
+            logging.info("Next Page")
         except:
-            break
-             
+            logging.info("No Next Page")
+            break             
 
     
     logging.info("Finished processing. Scraped {} notices".format(notice_count))
@@ -140,4 +132,4 @@ except Exception as e:
 finally:
     page_main.quit()
     page_details.quit()
-    output_xml_file.copyFinalXMLToServer("europe")
+    output_xml_file.copyFinalXMLToServer("asia")
