@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from datetime import date, datetime, timedelta
-# from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
@@ -31,8 +31,7 @@ def extract_and_save_notice(tender_html_element):
     try:
         published_date = page_main.find_element(By.XPATH, '/html/body/form/div/table/tbody/tr/td/table/tbody/tr['+str(tender_html_element)+']/td[2]').text
         published_date = re.findall('\d+/\d+/\d{4}', published_date)[0]
-        notice_data.published_date = datetime.strptime(notice_data.published_date, '%m/%d/%Y').strftime('%Y/%m/%d')
-        print(notice_data.published_date)
+        notice_data.published_date = datetime.strptime(published_date, '%m/%d/%Y').strftime('%Y/%m/%d')
     except:
         pass
 
@@ -43,20 +42,17 @@ def extract_and_save_notice(tender_html_element):
         end_date = page_main.find_element(By.XPATH, '/html/body/form/div/table/tbody/tr/td/table/tbody/tr['+str(tender_html_element)+']/td[3]').text
         end_date = re.findall('\d+/\d+/\d{4}', end_date)[0]
         notice_data.end_date = datetime.strptime(end_date, '%m/%d/%Y').strftime('%Y/%m/%d')
-        print(notice_data.end_date)
     except:
         pass
 
     try:
         notice_data.title_en = page_main.find_element(By.XPATH, '/html/body/form/div/table/tbody/tr/td/table/tbody/tr['+str(tender_html_element+1)+']/td').text.strip()
         notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
-        print(notice_data.title_en)
     except:
         pass
 
     try:
         notice_data.reference = page_main.find_element(By.XPATH, '/html/body/form/div/table/tbody/tr/td/table/tbody/tr['+str(tender_html_element)+']/td[1]/a').text.strip()
-        print(notice_data.reference)
     except:
         pass
 
@@ -100,7 +96,7 @@ try:
 
                 
     logging.info("Finished processing. Scraped {} notices".format(notice_count))
-    # fn.session_log(SCRIPT_NAME, notice_count, 'XML uploaded')
+    fn.session_log(SCRIPT_NAME, notice_count, 'XML uploaded')
 except Exception as e:
     try:
         fn.error_log(SCRIPT_NAME, e)
