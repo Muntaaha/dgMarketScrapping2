@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from datetime import date, datetime, timedelta
-# from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
@@ -25,8 +25,8 @@ def extract_and_save_notice(tender_html_element):
     notice_data.procurement_method = "Other"
     notice_data.language = "PT"
     notice_data.notice_type = 'spn'
-    notice_data.buyer = ''
-    notice_data.buyer_internal_id = ''
+    notice_data.buyer = 'CASA DA MOEDA DO BRASIL CMB'
+    notice_data.buyer_internal_id = '7699021'
 
     try:
         notice_data.end_date = page_main.find_element(By.XPATH, '/html/body/div/ul/li['+str(tender_html_element)+']/p[4]').text
@@ -41,14 +41,13 @@ def extract_and_save_notice(tender_html_element):
 
     try:
         notice_data.title_en = page_main.find_element(By.XPATH, '/html/body/div/ul/li['+str(tender_html_element)+']/h2').text
-        # notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
+        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
     except:
         pass
 
     try:
         notice_data.reference = page_main.find_element(By.XPATH, '/html/body/div/ul/li['+str(tender_html_element)+']/p[2]').text
         notice_data.reference = notice_data.reference.split('Edital:')[1].strip()
-        print(notice_data.reference)
     except:
         pass
 
@@ -91,7 +90,7 @@ try:
 
                 
     logging.info("Finished processing. Scraped {} notices".format(notice_count))
-    # fn.session_log(SCRIPT_NAME, notice_count, 'XML uploaded')
+    fn.session_log(SCRIPT_NAME, notice_count, 'XML uploaded')
 except Exception as e:
     try:
         fn.error_log(SCRIPT_NAME, e)
