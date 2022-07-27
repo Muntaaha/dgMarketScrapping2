@@ -65,8 +65,9 @@ def extract_and_save_notice(tender_html_element):
             notice_data.currency = 'USD'
         except:
             pass
+
         try:
-            notice_text += wait.page_details.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[8]/div[5]/div/main/div[2]'))).get_attribute('outerHTML')
+            notice_data.notice_text += wait_detail.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[8]/div[5]/div/main/div[2]'))).get_attribute('outerHTML')
         except:
             pass
 
@@ -88,14 +89,15 @@ def extract_and_save_notice(tender_html_element):
 page_main = fn.init_chrome_driver()
 page_details = fn.init_chrome_driver()
 wait = WebDriverWait(page_main, 20)
+wait_detail = WebDriverWait(page_details, 20)
 try:
     th = date.today() - timedelta(1)
     threshold = th.strftime('%Y/%m/%d')
     logging.info("Scraping from or greater than: " + threshold)
     urls = ['https://www.politecnicojic.edu.co/convocatorias-contratacion/61-subasta-inversa',
-           'https://www.politecnicojic.edu.co/convocatorias-contratacion/60-seleccion-minima-cuantia',
-           'https://www.politecnicojic.edu.co/convocatorias-contratacion/59-seleccion-abreviada-de-menor-cuantia',
-           'https://www.politecnicojic.edu.co/convocatorias-contratacion/58-licitacion-publica']
+            'https://www.politecnicojic.edu.co/convocatorias-contratacion/60-seleccion-minima-cuantia',
+            'https://www.politecnicojic.edu.co/convocatorias-contratacion/59-seleccion-abreviada-de-menor-cuantia',
+            'https://www.politecnicojic.edu.co/convocatorias-contratacion/58-licitacion-publica']
     logging.info('----------------------------------')
     for url in urls:
         fn.load_page(page_main, url)
