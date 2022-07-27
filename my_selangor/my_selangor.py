@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from datetime import date, datetime, timedelta
-# from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -30,7 +30,7 @@ def extract_and_save_notice(tender_html_element):
     notice_data.notice_type = 'spn'
 
     try:
-        published_date = page_details.find_element(By.XPATH, "td:nth-of-type(3)").text
+        published_date = tender_html_element.find_element(By.CSS_SELECTOR, "td:nth-of-type(3)").text
         published_date = re.findall('\d+ \w+ \d{4}',published_date)[0]
         notice_data.published_date =  datetime.strptime(published_date, '%d %b %Y').strftime('%Y/%m/%d')
         logging.info(notice_data.published_date)
@@ -41,18 +41,21 @@ def extract_and_save_notice(tender_html_element):
         return
     
     try:
-        title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) a").text
-        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(title_en)
+        notice_data.title_en = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) a").text
+        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
     except:
         pass
     
     try:
-        notice_data.referance = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) small strong u").text
+        try:
+            notice_data.referance = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) small strong u").text
+        except:
+            notice_data.referance = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) small strong").text
     except:
         pass
 
     try:
-        end_date = page_details.find_element(By.XPATH, "td:nth-of-type(4)").text
+        end_date = tender_html_element.find_element(By.CSS_SELECTOR, "td:nth-of-type(4)").text
         end_date = re.findall('\d+ \w+ \d{4}',end_date)[0]
         notice_data.end_date =  datetime.strptime(end_date, '%d %b %Y').strftime('%Y/%m/%d')
     except:
@@ -61,7 +64,7 @@ def extract_and_save_notice(tender_html_element):
     try:
         notice_data.notice_url = tender_html_element.find_element(By.CSS_SELECTOR,"td:nth-of-type(1) a").get_attribute('href')
         fn.load_page(page_details, notice_data.notice_url)
-        
+    
         try:
             notice_data.notice_text += wait_detail.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[2]/div/div/div[5]/div[2]/div[2]/table/tbody'))).text
         except:
@@ -76,8 +79,11 @@ def extract_and_save_notice(tender_html_element):
     except:
         notice_data.notice_url = url
     
-    if notice_data.cpvs == [] and notice_data.title_en is not None:
-        notice_data.cpvs = fn.assign_cpvs_from_title(notice_data.title_en.lower(),notice_data.category)
+    try:
+        if notice_data.cpvs == [] and notice_data.title_en is not None:
+            notice_data.cpvs = fn.assign_cpvs_from_title(notice_data.title_en.lower(),notice_data.category)
+    except:
+        pass
         
     notice_data.cleanup()
     logging.info('-------------------------------')
@@ -100,7 +106,7 @@ try:
     logging.info('----------------------------------')
     fn.load_page(page_main, url)
     
-    for page in range(25):
+    for page in range(5):
         page_check = WebDriverWait(page_main, 120).until(EC.presence_of_element_located((By.XPATH,'//*[@id="DataTables_Table_0"]/tbody/tr[1]/td[1]/strong/u'))).text
         for tender_html_element in wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div/div/div[3]/table/tbody'))).find_elements(By.CSS_SELECTOR, 'tr'):
             extract_and_save_notice(tender_html_element)
