@@ -28,41 +28,44 @@ def extract_and_save_notice(tender_html_element):
     notice_data.buyer = 'CÂMARA MUNICIPAL DE EXTREMA'
     notice_data.buyer_internal_id = '7782850'
 
-    try:
-        end_date = tender_html_element.find_element(By.CSS_SELECTOR, '.processos div:nth-of-type(4) p').text
-        end_date = re.findall('\d+/\d+/\d{4}', end_date)[0]
-        notice_data.end_date = datetime.strptime(end_date, '%d/%m/%Y').strftime('%Y/%m/%d')
-    except:
-        pass
+    check_tender_in_process = tender_html_element.find_element(By.CSS_SELECTOR, '.processos div:nth-of-type(5) p').text.strip()
+    print(check_tender_in_process)
+    if check_tender_in_process == "Em andamento" or check_tender_in_process == "Revogada":
+        try:
+            end_date = tender_html_element.find_element(By.CSS_SELECTOR, '.processos div:nth-of-type(4) p').text
+            end_date = re.findall('\d+/\d+/\d{4}', end_date)[0]
+            notice_data.end_date = datetime.strptime(end_date, '%d/%m/%Y').strftime('%Y/%m/%d')
+        except:
+            pass
 
 
-    if notice_data.end_date is not None and notice_data.end_date < threshold:
-        return
+        if notice_data.end_date is not None and notice_data.end_date < threshold:
+            return
 
-    try:
-        title_en = tender_html_element.find_element(By.CSS_SELECTOR, '.objeto').text
-        notice_data.title_en = title_en.split('Objeto:')[1].strip()
-        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
-    except:
-        pass
+        try:
+            title_en = tender_html_element.find_element(By.CSS_SELECTOR, '.objeto').text
+            notice_data.title_en = title_en.split('Objeto:')[1].strip()
+            notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
+        except:
+            pass
 
-    try:
-        notice_data.reference = tender_html_element.find_element(By.CSS_SELECTOR, '.processos div:nth-of-type(1) p').text.strip()
-    except:
-        pass
+        try:
+            notice_data.reference = tender_html_element.find_element(By.CSS_SELECTOR, '.processos div:nth-of-type(1) p').text.strip()
+        except:
+            pass
 
-    try:
-        notice_data.resource_url = tender_html_element.find_element(By.CSS_SELECTOR, '.processos a').get_attribute('href')
-    except:
-        pass
+        try:
+            notice_data.resource_url = tender_html_element.find_element(By.CSS_SELECTOR, '.processos a').get_attribute('href')
+        except:
+            pass
 
-    notice_data.notice_url = url
+        notice_data.notice_url = url
 
-    try: 
-        if notice_data.cpvs == [] and notice_data.title_en is not None:
-            notice_data.cpvs = fn.assign_cpvs_from_title(notice_data.title_en.lower(),notice_data.category)
-    except:
-        pass
+        try: 
+            if notice_data.cpvs == [] and notice_data.title_en is not None:
+                notice_data.cpvs = fn.assign_cpvs_from_title(notice_data.title_en.lower(),notice_data.category)
+        except:
+            pass
 
     notice_data.cleanup()
     logging.info('-------------------------------')
