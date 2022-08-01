@@ -56,6 +56,15 @@ def extract_and_save_notice(tender_html_element):
     except:
         pass
 
+    try:
+        check_link = page_main.find_element(By.XPATH, '/html/body/form/div/table/tbody/tr/td/table/tbody/tr['+str(tender_html_element)+']/td[1]/a').get_attribute('href')
+        link_first_part = check_link.split(",")[0].strip()
+        link_first_part = link_first_part.replace("javascript:openDocument(","").strip()
+        link_first_part = link_first_part.replace("'","").strip()
+        notice_data.resource_url = 'https://dakota.cebw.org/cebwWeb/Bids?action=showDocument&documentId='+link_first_part+'&documentType=TERM'
+    except:
+        pass
+
     notice_data.notice_url = url
 
     try: 
