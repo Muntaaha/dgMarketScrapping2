@@ -29,7 +29,10 @@ def extract_and_save_notice(tender_html_element):
     notice_data.notice_type = 'spn'
 
     try:
-        published_date = tender_html_element.find_element(By.CSS_SELECTOR, 'div:nth-child(11)').text.strip()
+        try:
+            published_date = tender_html_element.find_element(By.CSS_SELECTOR, 'div:nth-child(11)').text.strip()
+        except:
+            published_date = tender_html_element.find_element(By.CSS_SELECTOR, 'div:nth-child(10)').text.strip()
         published_date = re.findall('\d+ \w+ \d{4}',published_date)[0]
         notice_data.published_date = datetime.strptime(published_date,'%d %B %Y').strftime('%Y/%m/%d')
         logging.info(notice_data.published_date)
@@ -51,10 +54,9 @@ def extract_and_save_notice(tender_html_element):
         pass
 
     try:
-        end_date = tender_html_element.find_element(By.CSS_SELECTOR, 'td:nth-child(8)').text.strip()
+        end_date = tender_html_element.find_element(By.CSS_SELECTOR, 'div:nth-child(8)').text.strip()
         end_date = re.findall('\d+ \w+ \d{4}',end_date)[0]
         notice_data.end_date = datetime.strptime(end_date,'%d %B %Y').strftime('%Y/%m/%d')
-        logging.info(notice_data.end_date)
     except:
         pass
         
@@ -64,7 +66,7 @@ def extract_and_save_notice(tender_html_element):
         fn.load_page(page_details, notice_data.notice_url)
 
         try:
-            notice_data.notice_text += WebDriverWait(page_details, 180).until(EC.presence_of_element_located((By.CSS_SELECTOR,'#standard-body #all-content-wrapper'))).get_attribute('outerHTML')
+            notice_data.notice_text += WebDriverWait(page_details, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR,'#standard-body #all-content-wrapper'))).get_attribute('outerHTML')
         except:
             pass
     except:
@@ -89,8 +91,8 @@ try:
     fn.load_page(page_main, url)
     logging.info(url)
     
-    for page_num in range(2,7):                                                                   
-        page_check = WebDriverWait(page_main, 180).until(EC.presence_of_element_located((By.XPATH,'//*[@id="68b0982b-041b-4ae5-ac28-4893f22ad4f5"]/a'))).text
+    for page_num in range(2,5):                                                                   
+        page_check = WebDriverWait(page_main, 180).until(EC.presence_of_element_located((By.XPATH,'/html/body/div[3]/div[2]/div/div/div/div/div[3]/div/div/div/div[1]/div[1]/div[1]/h2/a'))).text
         for tender_html_element in  WebDriverWait(page_main, 180).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.gadget.partial-gadget'))).find_elements(By.CSS_SELECTOR, '.search-result'):
             extract_and_save_notice(tender_html_element)
             if notice_count >= MAX_NOTICES:
@@ -103,7 +105,7 @@ try:
             next_page = 'https://www.contractsfinder.service.gov.uk/Search/Results?&page='+str(page_num)+'#dashboard_notices'
             fn.load_page(page_main, next_page)
             logging.info("Next page")
-            WebDriverWait(page_main, 50).until_not(EC.text_to_be_present_in_element((By.XPATH,'//*[@id="68b0982b-041b-4ae5-ac28-4893f22ad4f5"]/a'),page_check))
+            WebDriverWait(page_main, 50).until_not(EC.text_to_be_present_in_element((By.XPATH,'/html/body/div[3]/div[2]/div/div/div/div/div[3]/div/div/div/div[1]/div[1]/div[1]/h2/a'),page_check))
         except:
             logging.info("No Next Page")
             break
@@ -121,5 +123,4 @@ finally:
     page_main.quit()
     page_details.quit()
     output_xml_file.copyFinalXMLToServer("europe")
-
 
