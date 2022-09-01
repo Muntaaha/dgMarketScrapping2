@@ -27,49 +27,64 @@ def extract_and_save_notice(tender_html_element):
     notice_data.performance_country = "Australia"
     notice_data.contact_country = "Australia"
 
-    # try:
-    notice_data.end_date = page_main.find_element(By.CSS_SELECTOR, 'td:nth-of-type(5)').text
-    notice_data.end_date = re.findall('\d+/\d+/\d{4}', notice_data.end_date)[0]
-    notice_data.end_date = datetime.strptime(notice_data.end_date, '%d/%m/%Y').strftime('%Y/%m/%d')
-    # except:
-    #     pass
-    # try:
-    notice_data.title_en = tender_html_element.find_element(By.CSS_SELECTOR, 'td:nth-of-type(2) a').text.strip()
-    notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
-    # except:
-    #     pass
+    try:
+        notice_data.end_date = page_main.find_element(By.CSS_SELECTOR, 'td:nth-of-type(5)').text
+        notice_data.end_date = re.findall('\d+/\d+/\d{4}', notice_data.end_date)[0]
+        notice_data.end_date = datetime.strptime(notice_data.end_date, '%d/%m/%Y').strftime('%Y/%m/%d')
+    except:
+        pass
 
-    # try:
-    notice_data.reference = tender_html_element.find_element(By.CSS_SELECTOR, 'td:nth-of-type(1) a').text.strip()
-    # except:
-    #     pass
+    try:
+        notice_data.title_en = tender_html_element.find_element(By.CSS_SELECTOR, 'td:nth-of-type(2) a').text.strip()
+        notice_data.title_en = GoogleTranslator(source='auto', target='en').translate(notice_data.title_en)
+    except:
+        pass
 
-    # try:
-    notice_data.notice_url = page_main.find_element(By.CSS_SELECTOR, 'td:nth-of-type(1) a').get_attribute('href')
-    fn.load_page(page_details, notice_data.notice_url)
+    try:
+        notice_data.reference = tender_html_element.find_element(By.CSS_SELECTOR, 'td:nth-of-type(1) a').text.strip()
+    except:
+        pass
 
-    # try:
-    notice_data.published_date = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[8]/div/div/p').text
-    notice_data.published_date = re.findall('\d+/\d+/\d{4}', notice_data.published_date)[0]
-    notice_data.published_date = datetime.strptime(notice_data.published_date, '%d/%m/%Y').strftime('%Y/%m/%d')
-    # except:
-    #     pass
+    try:
+        notice_data.notice_url = page_main.find_element(By.CSS_SELECTOR, 'td:nth-of-type(1) a').get_attribute('href')
+        fn.load_page(page_details, notice_data.notice_url)
 
-    # if notice_data.published_date is not None and notice_data.published_date < threshold:
-    #     return
+        try:
+            notice_data.published_date = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[8]/div/div/p').text
+            notice_data.published_date = re.findall('\d+/\d+/\d{4}', notice_data.published_date)[0]
+            notice_data.published_date = datetime.strptime(notice_data.published_date, '%d/%m/%Y').strftime('%Y/%m/%d')
+        except:
+            pass
 
-    # try:
-    notice_data.buyer = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[5]/div/div/p').text.strip()
-    # except:
-    #     pass
+        if notice_data.published_date is not None and notice_data.published_date < threshold:
+            return
 
-    # try:
-    notice_data.notice_text += wait_detail.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[1]/div/div[1]/div[3]'))).get_attribute('outerHTML')
-    # except:
-    #     pass
+        try:
+            notice_data.address = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[6]/div/div/p').text.strip()
+        except:
+            pass
 
-    # except:
-    #     notice_data.notice_url = url
+        try:
+            notice_data.contact_phone = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[11]/div/div/p').text.strip()
+            contact_phone = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[12]/p').text.strip()
+            contact_phone = contact_phone.split('(If outside Australia call')[1]
+            contact_phone = contact_phone.split(')')[0].strip()
+            notice_data.contact_phone = notice_data.contact_phone + ',' + contact_phone
+        except:
+            pass
+
+        try:
+            notice_data.buyer = page_details.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[5]/div/div/p').text.strip()
+        except:
+            pass
+
+        try:
+            notice_data.notice_text += wait_detail.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[1]/div/div[1]/div[3]'))).get_attribute('outerHTML')
+        except:
+            pass
+
+    except:
+        notice_data.notice_url = url
 
     notice_data.cleanup()
     logging.info('-------------------------------')
@@ -96,11 +111,11 @@ try:
             if notice_count >= MAX_NOTICES:
                 break
 
-            # if notice_data.published_date is not None and  notice_data.published_date < threshold:
-            #     break
+            if notice_data.published_date is not None and  notice_data.published_date < threshold:
+                break
 
     logging.info("Finished processing. Scraped {} notices".format(notice_count))
-    # fn.session_log(SCRIPT_NAME, notice_count, 'XML uploaded')
+    fn.session_log(SCRIPT_NAME, notice_count, 'XML uploaded')
 except Exception as e:
     try:
         fn.error_log(SCRIPT_NAME, e)
