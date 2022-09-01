@@ -61,11 +61,35 @@ def extract_and_save_notice(tender_html_element):
         notice_data.buyer = page_main.find_element(By.XPATH, '/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/table/tbody/tr/td[3]').text.strip()
     except:
         pass
+
+    tender_details = page_main.find_element(By.XPATH,'/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/table/tbody/tr/td[1]/div')
+    page_main.execute_script("arguments[0].click();",tender_details)
+
     row_number += 1
     try:
-        notice_data.notice_text += wait.until(EC.presence_of_element_located((By.XPATH,'/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/div/table/tbody/tr/td[2]/table/tbody'))).get_attribute('outerHTML')
+        notice_data.notice_text += WebDriverWait(page_main, 120).until(EC.presence_of_element_located((By.XPATH,'/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/div/table/tbody/tr/td[2]/table/tbody'))).get_attribute('outerHTML')
     except:
         pass
+    
+    try:
+        notice_data.contact_name = page_main.find_element(By.XPATH, '/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/div/table/tbody/tr/td[2]/table/tbody/tr/td[3]/table/tbody/tr[7]/td').text.strip()
+    except:
+        pass
+
+    try:
+        notice_data.contact_phone = page_main.find_element(By.XPATH, '/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/div/table/tbody/tr/td[2]/table/tbody/tr/td[3]/table/tbody/tr[8]/td').text.strip()
+        try:
+            notice_data.contact_phone = notice_data.contact_phone.split(':')[1].strip()
+        except:
+            pass
+    except:
+        pass
+
+    try:
+        notice_data.contact_email = page_main.find_element(By.XPATH, '/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div['+str(row_number)+']/div/table/tbody/tr/td[2]/table/tbody/tr/td[3]/table/tbody/tr[9]/td/span/a').text.strip()
+    except:
+        pass
+
     notice_data.notice_url = url
 
     row_number += 1
@@ -77,7 +101,6 @@ def extract_and_save_notice(tender_html_element):
 
 # ----------------------------------------- Main Body
 page_main = fn.init_chrome_driver()
-wait = WebDriverWait(page_main, 20)
 try:
     th = date.today() - timedelta(1)
     threshold = th.strftime('%Y/%m/%d')
@@ -87,7 +110,7 @@ try:
     fn.load_page(page_main, url)
     logging.info(url)
 
-    for page_number in range(2):
+    for page_num in range(5):
         row_number = 1
         page_check = WebDriverWait(page_main, 120).until(EC.presence_of_element_located((By.XPATH,'/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div[1]/table/tbody/tr/td[2]'))).text
         for tender_html_element in range(1,51):
@@ -95,11 +118,12 @@ try:
             if notice_count >= MAX_NOTICES:
                 break
 
-            if notice_data.published_date is not None and  notice_data.published_date < threshold:
-                break
+        if notice_data.published_date is not None and  notice_data.published_date < threshold:
+            break
 
         try:            
-            page_main.find_element('/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[2]/table/tbody/tr[2]/td[3]/a').click()
+            next_page = page_main.find_element('/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[2]/table/tbody/tr[2]/td[3]/a')
+            page_main.execute_script("arguments[0].click();",next_page)
             WebDriverWait(page_main, 50).until_not(EC.text_to_be_present_in_element((By.XPATH,'/html/body/form/div[8]/div/div/div[3]/div/div[3]/div/div/div/div[1]/div[2]/div[1]/table/tbody/tr/td[2]'),page_check))
             logging.info("Next Page")
         except:
